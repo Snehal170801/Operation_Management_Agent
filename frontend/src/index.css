@@ -1,0 +1,192 @@
+@import "tailwindcss";
+@import "./fonts.css";
+
+/* Design tokens — same palette and type as the VisionIQ reference UI. */
+@theme {
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  /* One typeface everywhere: even `font-mono` renders in Poppins. */
+  --font-mono: "Poppins", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand: #ea4d4e;
+  --color-brand-dark: #c53536;
+  --color-brand-soft: #ffdbdc;
+  --color-brand-soft-hover: #ffc7c8;
+  --color-brand-tint: #fff3f3;
+  --color-brand-ink: #b03a3b;
+  --color-danger: #c53536;
+  --color-danger-soft: #fdecec;
+  --color-ink: #282828;
+  --color-muted: #6b6969;
+  --color-page: #f5f6fb;
+  --color-title: #222529;
+  --color-line: #dfe2e6;
+  --color-card-border: #d9d2d2;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+  background: var(--color-page);
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+}
+
+/* Native <select> popups follow the OS scheme; this app is light-only. */
+select {
+  color-scheme: light;
+}
+
+/* Scrollbars stay invisible until the area is being scrolled. */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 999px;
+  }
+  *:hover::-webkit-scrollbar-thumb {
+    background: var(--color-brand);
+  }
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Page heading — identical on every page. */
+.page-title {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--color-title);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dash-fade-in {
+  animation: fadeInUp 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Respect the OS "reduce motion" setting: placeholders stay, the sweeping shimmer doesn't. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer {
+    animation: none;
+  }
+  .dash-fade-in {
+    animation: none;
+  }
+}
+
+/* Login fields: Chrome paints autofilled inputs light blue, which clobbers the frosted look. */
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover,
+.login-input:-webkit-autofill:focus,
+.login-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #222529;
+  caret-color: #222529;
+  -webkit-box-shadow: 0 0 0 1000px #f1f5f9 inset;
+  transition: background-color 600000s 0s, color 600000s 0s;
+}
+
+/* ───────────── Sign-in screens: motion ───────────── */
+@keyframes authFloatA { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(60px,40px,0) scale(1.15); } }
+@keyframes authFloatB { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-70px,-50px,0) scale(1.2); } }
+@keyframes authFloatC { 0%,100% { transform: translate3d(0,0,0); } 50% { transform: translate3d(40px,-60px,0); } }
+@keyframes authRise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes authPop { from { opacity: 0; transform: translateY(24px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes authBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+@keyframes authStep {
+  0%, 22%, 100% { background: rgba(255,255,255,.15); color: #fff; box-shadow: none; transform: scale(1); }
+  4%, 18% { background: #fff; color: #c53536; box-shadow: 0 0 0 6px rgba(255,255,255,.18), 0 8px 24px rgba(0,0,0,.25); transform: scale(1.08); }
+}
+@keyframes authDot { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+@keyframes authSweep { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(260%) skewX(-20deg); } }
+@keyframes authPing { 0% { transform: scale(1); opacity: .7; } 80%,100% { transform: scale(2.4); opacity: 0; } }
+
+.auth-blob-a { animation: authFloatA 16s ease-in-out infinite; }
+.auth-blob-b { animation: authFloatB 20s ease-in-out infinite; }
+.auth-blob-c { animation: authFloatC 24s ease-in-out infinite; }
+.auth-rise { animation: authRise .7s cubic-bezier(.22,1,.36,1) both; animation-delay: var(--d, 0ms); }
+.auth-pop { animation: authPop .8s cubic-bezier(.22,1,.36,1) both; animation-delay: var(--d, 0ms); }
+.auth-bob { animation: authBob 6s ease-in-out infinite; animation-delay: var(--d, 0ms); }
+.auth-step { animation: authStep 10s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.auth-flow-dot { animation: authDot 10s linear infinite; }
+.auth-ping { animation: authPing 2s cubic-bezier(0,0,.2,1) infinite; }
+.auth-grid {
+  background-image: radial-gradient(rgba(255,255,255,.22) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(ellipse at 30% 40%, #000 0%, transparent 72%);
+}
+.auth-btn-shine { position: relative; overflow: hidden; }
+.auth-btn-shine::after {
+  content: ''; position: absolute; inset: 0 auto 0 0; width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+  transform: translateX(-120%) skewX(-20deg);
+}
+.auth-btn-shine:not(:disabled):hover::after { animation: authSweep .9s ease; }
+.auth-field:focus-within > svg:first-child { color: #ea4d4e; }
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-blob-a, .auth-blob-b, .auth-blob-c, .auth-rise, .auth-pop, .auth-bob, .auth-step,
+  .auth-flow-dot, .auth-ping, .auth-btn-shine::after { animation: none !important; }
+  .auth-flow-dot { display: none; }
+}
+
+/* Sign-in form: each child rises in one after another */
+.auth-form > * { animation: authRise .6s cubic-bezier(.22,1,.36,1) both; }
+.auth-form > *:nth-child(1) { animation-delay: .35s; }
+.auth-form > *:nth-child(2) { animation-delay: .43s; }
+.auth-form > *:nth-child(3) { animation-delay: .51s; }
+.auth-form > *:nth-child(4) { animation-delay: .59s; }
+.auth-form > *:nth-child(5) { animation-delay: .67s; }
+.auth-form > *:nth-child(6) { animation-delay: .75s; }
+.auth-form > *:nth-child(7) { animation-delay: .83s; }
+.auth-form > *:nth-child(8) { animation-delay: .91s; }
+.auth-form > *:nth-child(9) { animation-delay: .99s; }
+@keyframes authGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(234,77,78,.45), 0 12px 28px -10px rgba(197,53,54,.8); } 50% { box-shadow: 0 0 0 12px rgba(234,77,78,0), 0 12px 28px -10px rgba(197,53,54,.8); } }
+.auth-badge { animation: authGlow 2.6s ease-out infinite; }
+.auth-field:focus-within > svg:first-child { background: #ffdbdc; }
+@media (prefers-reduced-motion: reduce) { .auth-form > *, .auth-badge { animation: none !important; } }

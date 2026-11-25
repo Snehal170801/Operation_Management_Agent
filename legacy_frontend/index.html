@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Operation Agents — Test Console</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-dot"></div>
+        <span>Operation Agents</span>
+      </div>
+
+      <nav class="nav-group">
+        <div class="nav-label">Workflow</div>
+        <button class="nav-link active" data-page="create-case">New Case</button>
+        <button class="nav-link" data-page="requests">Requests</button>
+        <button class="nav-link" data-page="case-lookup">Case Lookup</button>
+      </nav>
+
+      <nav class="nav-group">
+        <div class="nav-label">Agents</div>
+        <button class="nav-link" data-page="operations-agent">1. Operations Agent</button>
+        <button class="nav-link" data-page="purchase-agent">2. Purchase Agent</button>
+        <button class="nav-link" data-page="procurement-agent">3. Procurement Agent</button>
+        <button class="nav-link" data-page="vendor-agent">4. Vendor Agent</button>
+        <button class="nav-link disabled" data-page="approval-agent" disabled>5. Approval Agent</button>
+        <button class="nav-link disabled" data-page="po-agent" disabled>6. PO Agent</button>
+        <button class="nav-link disabled" data-page="delivery-agent" disabled>7. Delivery Agent</button>
+        <button class="nav-link disabled" data-page="grn-agent" disabled>8. GRN Agent</button>
+        <button class="nav-link disabled" data-page="invoice-agent" disabled>9. Invoice Agent</button>
+        <button class="nav-link disabled" data-page="matching-agent" disabled>10. Matching Agent</button>
+        <button class="nav-link disabled" data-page="exception-agent" disabled>11. Exception Agent</button>
+        <button class="nav-link disabled" data-page="payment-agent" disabled>12. Payment Review</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <label for="api-base">API base URL</label>
+        <input id="api-base" type="text" value="http://127.0.0.1:8000" />
+        <div class="status-row">
+          <span id="api-status-dot" class="status-dot"></span>
+          <span id="api-status-text">checking...</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <!-- New Case -->
+      <section id="page-create-case" class="page active">
+        <h1>Start a New Case</h1>
+        <p class="subtitle">Runs the orchestrator: Operations Agent creates the case, then Purchase Agent structures the request via Azure OpenAI.</p>
+
+        <div class="card">
+          <label>Requester ID</label>
+          <input id="requester-id" type="text" placeholder="e.g. aitech2@daccess.co" />
+
+          <label>Raw Purchase Request</label>
+          <textarea id="raw-request" rows="4" placeholder="e.g. We need 100 safety helmets for the site team, cost center CC-204"></textarea>
+
+          <button id="btn-create-case" class="btn-primary">Create Case</button>
+          <div id="create-case-error" class="error-text"></div>
+        </div>
+
+        <div id="create-case-result" class="card result-card hidden">
+          <h3>Case Created</h3>
+          <div id="create-case-details" class="field-list"></div>
+        </div>
+      </section>
+
+      <!-- Requests -->
+      <section id="page-requests" class="page">
+        <h1>Requests</h1>
+        <p class="subtitle">Every case created so far, with its current stage and progress.</p>
+
+        <div class="card table-card">
+          <div class="table-toolbar">
+            <button id="btn-refresh-requests" class="btn-secondary">Refresh</button>
+            <span id="requests-count" class="requests-count"></span>
+          </div>
+          <div id="requests-error" class="error-text"></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Case ID</th>
+                  <th>Requester</th>
+                  <th>Items</th>
+                  <th>Total Qty</th>
+                  <th>Stage</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="requests-table-body">
+                <tr><td colspan="8" class="empty-state">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Case Lookup -->
+      <section id="page-case-lookup" class="page">
+        <h1>Case Lookup</h1>
+        <p class="subtitle">Inspect any case: current stage, purchase request details, and full event/audit trail.</p>
+
+        <div class="card">
+          <label>Case ID</label>
+          <div class="input-row">
+            <input id="lookup-case-id" type="text" placeholder="paste a case_id" />
+            <button id="btn-lookup" class="btn-secondary">Refresh</button>
+          </div>
+          <div id="lookup-error" class="error-text"></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>Case Status</h3>
+            <div id="lookup-case-details" class="field-list">
+              <p class="empty-state">Run a lookup to see case status.</p>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Purchase Request</h3>
+            <div id="lookup-purchase-details" class="field-list">
+              <p class="empty-state">Run a lookup to see the purchase request.</p>
+            </div>
+            <div id="lookup-purchase-items"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Event Timeline</h3>
+          <ul id="lookup-events-list" class="timeline">
+            <li class="timeline-empty">No events yet — run a lookup first.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Operations Agent info -->
+      <section id="page-operations-agent" class="page">
+        <h1>1. Operations Agent</h1>
+        <p class="subtitle">Case backbone — creates cases, tracks stage, logs every event. No LLM involved.</p>
+
+        <div class="card">
+          <div class="stat-row" id="ops-stat-row">
+            <div class="stat-box"><div class="stat-value" id="ops-stat-total">—</div><div class="stat-label">Total Cases</div></div>
+            <div class="stat-box"><div class="stat-value" id="ops-stat-open">—</div><div class="stat-label">Open</div></div>
+            <div class="stat-box"><div class="stat-value" id="ops-stat-closed">—</div><div class="stat-label">Closed</div></div>
+            <div class="stat-box"><div class="stat-value" id="ops-stat-rejected">—</div><div class="stat-label">Rejected</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Most Recent Cases</h3>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Case ID</th><th>Requester</th><th>Stage</th><th>Status</th><th>Created</th><th></th></tr></thead>
+              <tbody id="ops-recent-cases"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Purchase Agent info -->
+      <section id="page-purchase-agent" class="page">
+        <h1>2. Purchase Agent</h1>
+        <p class="subtitle">Breaks raw request text into structured line items (description + quantity) via Azure OpenAI.</p>
+
+        <div class="card">
+          <div class="stat-row" id="purchase-stat-row">
+            <div class="stat-box"><div class="stat-value" id="purchase-stat-requests">—</div><div class="stat-label">Requests Structured</div></div>
+            <div class="stat-box"><div class="stat-value" id="purchase-stat-items">—</div><div class="stat-label">Line Items Extracted</div></div>
+            <div class="stat-box"><div class="stat-value" id="purchase-stat-qty">—</div><div class="stat-label">Total Quantity</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Most Recent Purchase Requests</h3>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Case ID</th><th>Items</th><th>Total Qty</th><th>Created</th><th></th></tr></thead>
+              <tbody id="purchase-recent-requests"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Procurement Agent info -->
+      <section id="page-procurement-agent" class="page">
+        <h1>3. Procurement Agent</h1>
+        <p class="subtitle">Checks each line item against stock. If everything's available, the case closes automatically; otherwise it moves to sourcing.</p>
+
+        <div class="card">
+          <div class="stat-row" id="procurement-stat-row">
+            <div class="stat-box"><div class="stat-value" id="procurement-stat-checked">—</div><div class="stat-label">Total</div></div>
+            <div class="stat-box"><div class="stat-value" id="procurement-stat-fulfilled">—</div><div class="stat-label">Closed</div></div>
+            <div class="stat-box"><div class="stat-value" id="procurement-stat-sourcing">—</div><div class="stat-label">Open</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Add / Update Stock</h3>
+          <p class="subtitle" style="margin-bottom:12px;">No inventory system exists yet — seed stock here so you can test both branches (sufficient vs. insufficient).</p>
+          <label>Item Description</label>
+          <input id="stock-description" type="text" placeholder="must match a purchase request item exactly, e.g. Safety Helmet" />
+          <label>Quantity Available</label>
+          <input id="stock-quantity" type="text" placeholder="e.g. 50" />
+          <button id="btn-save-stock" class="btn-primary">Save Stock</button>
+          <div id="stock-error" class="error-text"></div>
+        </div>
+
+        <div class="card">
+          <h3>Current Stock</h3>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Item</th><th>Qty Available</th><th>Updated</th></tr></thead>
+              <tbody id="stock-table-body"><tr><td colspan="3" class="empty-state">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Vendor Agent info -->
+      <section id="page-vendor-agent" class="page">
+        <h1>4. Vendor Agent</h1>
+        <p class="subtitle">Collects vendor quotes for cases that need sourcing, then picks the best one by price, delivery time, terms and reliability.</p>
+
+        <div class="card">
+          <div class="stat-row" id="vendor-stat-row">
+            <div class="stat-box"><div class="stat-value" id="vendor-stat-count">—</div><div class="stat-label">Vendors</div></div>
+            <div class="stat-box"><div class="stat-value" id="vendor-stat-quotes">—</div><div class="stat-label">Awaiting Quotes</div></div>
+            <div class="stat-box"><div class="stat-value" id="vendor-stat-selected">—</div><div class="stat-label">Vendors Selected</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Add Vendor</h3>
+          <label>Vendor Name</label>
+          <input id="vendor-name" type="text" placeholder="e.g. Vendor A" />
+          <label>Reliability Score (1–5)</label>
+          <input id="vendor-reliability" type="text" placeholder="e.g. 4.2" />
+          <button id="btn-save-vendor" class="btn-primary">Save Vendor</button>
+          <div id="vendor-error" class="error-text"></div>
+        </div>
+
+        <div class="card">
+          <h3>Vendors</h3>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Name</th><th>Reliability</th></tr></thead>
+              <tbody id="vendor-table-body"><tr><td colspan="2" class="empty-state">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Submit a Quote</h3>
+          <p class="subtitle" style="margin-bottom:12px;">For a case at "sourcing needed" — paste a case_id from Case Lookup or Requests.</p>
+          <label>Case ID</label>
+          <input id="quote-case-id" type="text" placeholder="paste a case_id" />
+          <label>Vendor</label>
+          <select id="quote-vendor-select"></select>
+          <label>Raw Quote Text</label>
+          <textarea id="quote-raw-text" rows="3" placeholder="e.g. We can supply 10 helmets at Rs.250 each, delivery in 5 days, 50% advance"></textarea>
+          <button id="btn-submit-quote" class="btn-primary">Submit Quote</button>
+          <button id="btn-rank-vendors" class="btn-secondary">Rank Vendors</button>
+          <div id="quote-error" class="error-text"></div>
+        </div>
+
+        <div class="card">
+          <h3>Quotes for this Case</h3>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Vendor</th><th>Price</th><th>Lead Time</th><th>Terms</th></tr></thead>
+              <tbody id="quotes-table-body"><tr><td colspan="4" class="empty-state">Enter a case ID above and submit or load quotes.</td></tr></tbody>
+            </table>
+          </div>
+          <div id="vendor-selection-result" class="hidden">
+            <div class="items-heading">Recommendation</div>
+            <div id="vendor-selection-details" class="field-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Placeholder template for not-yet-built agents -->
+      <section id="page-placeholder" class="page">
+        <h1 id="placeholder-title">Agent</h1>
+        <div class="card placeholder-card">
+          <p>Not built yet — follows the same pattern once it's next in the build order:</p>
+          <p class="mono">SQL table → repository → schema → agent → orchestrator hook → controller/route → test</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

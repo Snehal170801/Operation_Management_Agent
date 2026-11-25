@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="6" y1="4" x2="58" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C53536"/>
+      <stop offset="1" stop-color="#EA4D4E"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#bg)"/>
+  <!-- links from the lead agent to the three it hands work to -->
+  <g stroke="#fff" stroke-width="3.2" stroke-linecap="round" opacity="0.85">
+    <path d="M32 33V15"/>
+    <path d="M32 33 16.5 44.5"/>
+    <path d="M32 33 47.5 44.5"/>
+  </g>
+  <!-- the three agents -->
+  <g fill="#fff">
+    <circle cx="32" cy="14" r="6"/>
+    <circle cx="15" cy="46" r="6"/>
+    <circle cx="49" cy="46" r="6"/>
+  </g>
+  <!-- the lead agent -->
+  <circle cx="32" cy="33" r="9" fill="#fff"/>
+  <circle cx="32" cy="33" r="3.8" fill="#C53536"/>
+</svg>

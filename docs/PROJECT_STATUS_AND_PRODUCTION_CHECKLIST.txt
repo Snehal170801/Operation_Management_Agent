@@ -1,0 +1,135 @@
+OPERATION AGENTS - WHAT IS LEFT, AND WHAT TO IMPROVE FOR PRODUCTION
+Written: 6 October 2026
+Code: https://github.com/cognexa-cx/operation-agents  (branch: main)
+
+How to read this file
+  [ ] = not done        MUST = before real use        SHOULD = soon after        LATER = when time allows
+
+
+====================================================================
+PART 1.  WHAT IS LEFT TO BUILD
+====================================================================
+
+1.1  PDF and invoice intake
+  [ ] Live "reading..." status on the case page (PDF received -> reading -> matched / needs a person)
+  [ ] Watchdog: restart a stalled worker and tell an admin
+  [ ] Supplier upload link in each purchase-order email (optional; avoids stuck mail apps)
+  [ ] Test with a real set of sample supplier PDFs (text PDFs, scans, photos)
+  [ ] Remember each file already read, so the same PDF is never read twice (saves AI cost)
+
+1.2  Developer lane (Basic Operations)
+  [x] Stock history (done)
+  [x] Item and supplier management, preferred supplier (done)
+  [x] Printable purchase order and approval summary (done)
+  [x] Morning summary email for each department (done)
+  [ ] Exports: CSV and Excel of cases, purchase orders, invoices and stock
+  [ ] Unknown case address still shows empty panels under "No case found"
+  [ ] Harmless 404 errors in the browser console for a case with no order yet
+
+1.3  Testing lane
+  [x] Phase 1: safe test environment (own database, folder instead of email, AI stand-in)
+  [x] Phase 2: smoke tests (every account opens every page at 1440 and 390 width)
+  [x] Phase 3: main purchase journey and low-stock reorder journey
+  [ ] Phase 4: access-rules tests are written, but not yet run twice in a row
+  [ ] Phase 5: messy cases (partial delivery, expired quote, bounced email, price change,
+              cancel, duplicate request, wrong/damaged goods) plus the real failures we hit:
+              typed invoice with no invoice number, PDF invoice, unreadable PDF,
+              short replies like "Confirmed!", worker-alive check
+  [ ] Phase 6: screenshot comparison and accessibility checks
+  [ ] Phase 7: nightly automatic run with a short report
+  [ ] Phase 8: guide for exploratory testing
+  [ ] Testing guide document (docs/TESTING.md)
+  [ ] One full green browser run on the combined code (only partly run so far)
+
+1.4  Automatic Workflows lane (not started)
+  [ ] Price memory: remember what each supplier charged, flag unusual prices
+  [ ] Self-updating supplier ratings (on-time delivery, quote accuracy, invoice mistakes)
+  [ ] Automatic reorder trigger when stock reaches its minimum (approval still required)
+  [ ] Budgets per cost centre (warn or require an approver when over budget)
+  [ ] Weekly summary email for admins
+  [ ] Negotiation step (ask the best supplier for a better price once)
+
+1.5  Skipped on purpose
+  [ ] Finance / payment stage (skipped by the owner for now)
+  [ ] Phone calls to suppliers (built, switched OFF; vendors are contacted by email only)
+
+1.6  Not live yet
+  [ ] The running servers still use the older code. The new work is on main but not yet
+      running. To go live: switch the project folder to main and restart.
+
+
+====================================================================
+PART 2.  WHAT TO IMPROVE FOR PRODUCTION
+====================================================================
+
+2.1  Security
+  [ ] MUST    Change every default password (Admin@123 is on all accounts)
+  [ ] MUST    Delete USERS_AND_PASSWORDS.txt
+  [ ] MUST    Revoke or rotate every token that was pasted in chat:
+                - the GitHub tokens (github.com/settings/tokens)
+                - the DuckDNS token (duckdns.org)
+                - the Gmail app password
+  [ ] MUST    Set ENVIRONMENT=production, COOKIE_SECURE=true, ALLOW_OPEN_ACCOUNT=false
+  [ ] MUST    Restrict CORS_ORIGINS to the real address only
+  [ ] MUST    Keep secrets out of plain files where possible; never in chat or git
+  [ ] SHOULD  Review who holds which permission; force a password change at first login
+
+2.2  Reliability
+  [ ] MUST    Run as a service that starts by itself after a reboot and restarts on a crash
+              (today the servers are started by hand with start-servers.ps1)
+  [ ] MUST    Watchdog + alert to an admin if the worker or mailbox watcher stops
+              (it stalled for about 25 minutes on 6 Oct and nobody was told)
+  [ ] MUST    Find out why the worker stopped (cause still unknown)
+  [ ] MUST    Automatic daily database backups, and test a restore
+  [ ] SHOULD  Logs that are kept and searchable; a simple status page
+
+2.3  Where it runs
+  [ ] MUST    A proper always-on machine or server (not a slow laptop; not inside OneDrive)
+  [ ] MUST    A separate production database (apart from development and test databases)
+  [ ] MUST    Real HTTPS on an address that works everywhere: buy a domain (a .co costs about
+              Rs 1,500-3,000 a year) and renew the certificate automatically.
+              DuckDNS only works on the office network.
+  [ ] SHOULD  Fixed IP address; a way to deploy a released version and roll it back
+
+2.4  Email
+  [ ] MUST    Use a company mailbox instead of a personal Gmail app password
+  [ ] MUST    Give every department account a real email address (only the approver has one)
+  [ ] SHOULD  Check sending limits and spam settings for supplier emails
+
+2.5  Quality
+  [ ] MUST    A green full browser test run, twice in a row, on the combined code
+  [ ] SHOULD  Run the tests automatically on every change and every night
+  [ ] SHOULD  Test with real supplier PDFs; check speed with realistic volumes
+
+2.6  Cost and data
+  [ ] SHOULD  Daily limit and alert for AI usage (including the new page-image reading)
+  [ ] MUST    Load the real suppliers, stock, cost centres and users; clear out all test data
+  [ ] LATER   Data retention and privacy review
+
+2.7  Housekeeping
+  [ ] SHOULD  Delete the two leftover test databases when finished
+              (opetional_agents_test, opetional_agents_basicops_test)
+  [ ] SHOULD  Write an admin guide: setup, backup and restore, what to do when it stops
+  [ ] LATER   Finance stage, price memory and ratings (Part 1), decision on phone calls
+
+
+====================================================================
+SUGGESTED ORDER
+====================================================================
+  1. Passwords and tokens, then production settings
+  2. Automatic start, watchdog and backups
+  3. The dedicated machine and proper HTTPS
+  4. A green full test run
+  5. Real data, then go-live
+
+
+====================================================================
+WHERE THINGS LIVE (for the next person)
+====================================================================
+  Code (GitHub)         https://github.com/cognexa-cx/operation-agents  (main)
+  Start / stop servers  C:\Users\shri\.operation-agents\start-servers.ps1
+  HTTPS certificate     C:\Users\shri\.operation-agents\certs   (renews itself every night at 3:00 AM)
+  Live address          https://operational-agent.duckdns.org:5180   (office network only)
+  Not in GitHub         backend\.env, the SQL Server database, USERS_AND_PASSWORDS.txt, the certificate folder
+  Project rules         CLAUDE.md
+  Test switches         docs/TESTING_SWITCHES.md

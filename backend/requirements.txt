@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pyodbc
+python-dotenv
+openai
+pydantic
+bcrypt
+PyJWT
+pypdf
+pypdfium2
+openpyxl
+fpdf2>=2.8,<3
